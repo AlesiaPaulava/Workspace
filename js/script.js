@@ -17,7 +17,7 @@ const getData = async (url, cbSuccess, cbError) => { //функция котор
 
 //карточка с вакансией
 const createCard = (vacancy) => ` 
-  <article class="vacancy" tabindex="0 data-id="${vacancy.id}">
+  <article class="vacancy" tabindex="0" data-id="${vacancy.id}">
     <img src="${API_URL}${vacancy.logo}" alt="Логотип компании ${vacancy.company}" class="vacancy__img">
 
     <p class="vacancy__company">${vacancy.company}</p>
@@ -55,40 +55,43 @@ const renderError = (err) => { //функция принимает ошибку
   console.warn(err); //выводит ее в консоль
 }
 
-const createDetailVacancy = (data) => `
-
+//модальное окно под каждую вакансию(данные с сервера)
+const createDetailVacancy = ({
+  id,
+  title,
+  company,
+  description,
+  email,
+  salary,
+  type,
+  format,
+  experience,
+  location,
+  logo,
+}) => `
   <article class="detail">
     <div class="detail__header">
-      <img src="img/creative.svg" alt="Логотип компании Creative" class="detail__logo">
+      <img src="${API_URL}${logo}" alt="Логотип компании ${company}" class="detail__logo">
 
-      <p class="detail__company">Creative People</p>
-      <h2 class="detail__title">Графический дизайнер</h2>
+      <p class="detail__company">${company}</p>
+      <h2 class="detail__title">${title}</h2>
     </div>
     <div class="detail__main">
-      <p class="detail__description">Привет. Мы в CreativePeople ищем middle графического дизайнера в свою дизайн
-        команду. Удаленно, из любой точки нашей страны, где у вас будет хороший интернет. Опыт работы в разработке
-        логотипов, фирменных стилей обязателен.
-        <br>
-        У нас в портфолио много крупных российских компаний, с некоторыми мы работаем уже много лет и делаем самые
-        разные проекты, от сайтов до мобильных приложений.
-      </p>
-
+      <p class="detail__description">${description.replaceAll('\n', '<br>')}</p>
       <ul class="detail__fields">
-        <li class="ditail__field">от 110 000₽</li>
-        <li class="ditail__field">проектная работа</li>
-        <li class="ditail__field">удаленный</li>
-        <li class="ditail__field">опыт от 1 года до 3-х лет</li>
-        <li class="ditail__field">Москва</li>
+        <li class="ditail__field">от ${parseInt(salary).toLocaleString()}₽</li>
+        <li class="ditail__field">${type}</li>
+        <li class="ditail__field">${format}</li>
+        <li class="ditail__field">${experience}</li>
+        <li class="ditail__field">${location}</li>
       </ul>
     </div>
 
     <p class="detail__resume">Отправляйте резюме на
-      <a class="blue-text" href="mailto:CreativePeople@gmail.com">CreativePeople@gmail.com</a>
+      <a class="blue-text" href="mailto:${email}">${email}</a>
     </p>
   </article>
-
-
-`
+`;
 
 //рендер модального окна
 const renderModal = (data) => {
