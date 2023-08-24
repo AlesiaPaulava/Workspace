@@ -2,14 +2,16 @@ const API_URL = "https://workspace-methed.vercel.app/";
 const LOCATION_URL = "api/locations";//список городов на сервере
 const VACANCY_URL = "api/vacancy"; //список вакансий на сервере
 
-
+const cardsList = document.querySelector('.cards__list'); //получили список карточек
+let lastUrl = '';
+const pagination = {};
 
 
 const getData = async (url, cbSuccess, cbError) => { //функция которая возвращает данные
   try {  //если внутри скобок произойдет ошибка, то сработает catch
     const response = await fetch(url);
     const data = await response.json();//записываем в data данные переведенные из формата json
-    cbSuccess(data)
+    cbSuccess(data);
   } catch (err) {
     cbError(err)
   }
@@ -44,12 +46,42 @@ const createCards = (data) =>
   });
 
 
-const renderVacancy = (data, cardsList) => { //рендерим карточки с вакансиями
+const renderVacancies = (data) => { //рендерим карточки с вакансиями
   cardsList.textContent = ''; //очищаем список карточек  
   const cards = createCards(data); //создаем карточки с помощью функции createCards
   cardsList.append(...cards); //добавляем в список карточки cards 
-}
 
+
+  if (data.pagination) {
+    Object.assign(pagination, data.pagination);
+  }
+
+  observer.observe(cardsList.lastElementChild); //получаем последний элемент карточки
+};
+
+const renderMoreVacancies = (data) => { //рендерим карточки с вакансиями
+  const cards = createCards(data); //создаем карточки с помощью функции createCards
+  cardsList.append(...cards); //добавляем в список карточки cards 
+
+  if (data.pagination) {
+    Object.assign(pagination, data.pagination);
+  }
+
+  observer.observe(cardsList.lastElementChild);
+};
+
+const loadMoreVacacies = () => { //рендерим карточки с вакансиями
+
+  if (pagination.totalPages > pagination.currentPage) {//если всего страниц больше чем текущая страница
+    const urlWithParams = new URL(lastUrl);
+    urlWithParams.searchParams.set('page', pagination.currentPage + 1); //к текущей странице получаем еще одну страницу
+    urlWithParams.searchParams.set('limit', window.innerWidth < 768 ? 6 : 12); //если ширина страницы меньше 768, то 6 карточек видим, в другом случае 12
+
+    getData(urlWithParams, renderMoreVacancies, renderError).then(() => {
+      lastUrl = urlWithParams;
+    });
+  }
+};
 
 const renderError = (err) => { //функция принимает ошибку
   console.warn(err); //выводит ее в консоль
@@ -95,7 +127,6 @@ const createDetailVacancy = ({
 
 //рендер модального окна
 const renderModal = (data) => {
-  console.log(data);
   const modal = document.createElement('div');
   modal.classList.add('modal');
   const modalMain = document.createElement('div');
@@ -116,16 +147,37 @@ const renderModal = (data) => {
   modalMain.append(modalClose);
   modal.append(modalMain);
   document.body.append(modal);
+
+  //Закрытие модального окна по клику вне его и по кнопке
+  modal.addEventListener('click', ({ target }) => { //кликаем, через target определяем куда произошел клик
+    if (target === modal || target.closest('.modal__close')) { //если клин по модальному окну или кнопка .modal__close
+      modal.remove();
+    }
+  })
 };
 
 //открытие модалки по клику на вакансию 
 const openModal = (id) => {
-  console.log("id: ", id);
   getData(`${API_URL}${VACANCY_URL}/${id}`, renderModal, renderError);
 };
 
+//подгрузка информации при скроле
+const observer = new IntersectionObserver(
+  (entries) => { //элемент,за которым следим
+    entries.forEach(entry => { //берем каждый элемент
+      if (entry.isIntersecting) { //если элемент видимый то
+        loadMoreVacacies(); //вызываем функцию
+      }
+    });
+  },
+  {
+    rootMargin: '100px', //расстояние на котором сработает функция
+  }
+);
+
 const init = () => {
-  const cardsList = document.querySelector('.cards__list'); //получили список карточек
+  const filterForm = document.querySelector('.filter__form');
+
   //select city
   const citySelect = document.querySelector('#city');
   const cityChoices = new Choices(citySelect, {
@@ -146,24 +198,41 @@ const init = () => {
   );
 
   //cards
+  const urlWithParams = new URL(`${API_URL}${VACANCY_URL}`);
 
-  const url = new URL(`${API_URL}${VACANCY_URL}`);
+  urlWithParams.searchParams.set('limit', window.innerWidth < 768 ? 6 : 12); //если ширина страницы меньше 768, то 6 карточек видим, в другом случае 12
+  urlWithParams.searchParams.set('page', 1);
 
-  getData(
-    url,
-    (data) => {
-      renderVacancy(data, cardsList);
-    },
-    renderError,
-  );
+  getData(urlWithParams, renderVacancies, renderError).then(() => {
+    lastUrl = urlWithParams;
+  });
 
-  cardsList.addEventListener('click', ({target}) => {
+  //modal
+  cardsList.addEventListener('click', ({ target }) => {
     const vacancyCard = target.closest('.vacancy');
-    console.log("vacancyCard: ", vacancyCard );
+
     if (vacancyCard) { //проверяем действительно ли клик был по vacancyCard
       const vacancyId = vacancyCard.dataset.id; //получаем id
       openModal(vacancyId); //вызываем фун-ю открытия окна для вакансии с vacancyId
     }
+  });
+
+  //filter
+  filterForm.addEventListener('submit', (event) => {
+    event.preventDefault(); //блокировка перезагрузки страницы
+    const formData = new FormData(filterForm); //получаем данные из формы с помощью объекта new FormData
+
+    const urlWithParam = new URL(`${API_URL}${VACANCY_URL}`); //формируем URL
+
+    //добавляем параметры которые ожидает сервер
+    formData.forEach((value, key) => {
+      urlWithParam.searchParams.append(key, value)
+    });
+
+    getData(urlWithParam, renderVacancies, renderError).then(() => {
+      lastUrl = urlWithParam;
+      observer.observe()
+    });
   });
 };
 
