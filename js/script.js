@@ -175,8 +175,55 @@ const observer = new IntersectionObserver(
   }
 );
 
+//функция открытия фильтра
+const openFilter = (btn, dropDown, classNameBtn, classNameDd) => {
+  dropDown.style.height = `${dropDown.scrollHeight}px`; //задаем высоту dropDown (vacanciesFilter) с помощью scrollHeight- это текущая высота элемента, который скрыт
+  btn.classList.add(classNameBtn);
+  dropDown.classList.add(classNameDd);
+}
+
+//функция закрытия фильтра
+const closeFilter = (btn, dropDown, classNameBtn, classNameDd) => {
+  dropDown.style.height = ''; //высота будет та, которая указана в css
+  btn.classList.remove(classNameBtn);
+  dropDown.classList.remove(classNameDd);
+}
+
 const init = () => {
   const filterForm = document.querySelector('.filter__form');
+  const vacanciesFilterBtn = document.querySelector('.vacancies__filter-btn');
+  const vacanciesFilter = document.querySelector('.vacancies__filter');
+
+  //открытие/закрытие блока с фильтром по клику
+  vacanciesFilterBtn.addEventListener('click', () => {
+    if (vacanciesFilterBtn.classList.contains('vacancies__filter-btn_active')) { //если кнопка активна, то нам надо закрыть
+      closeFilter(
+        vacanciesFilterBtn,
+        vacanciesFilter,
+        'vacancies__filter-btn_active',
+        'vacancies__filter_active',
+      );
+    } else {
+      openFilter(
+        vacanciesFilterBtn,
+        vacanciesFilter,
+        'vacancies__filter-btn_active',
+        'vacancies__filter_active',
+      );
+    };
+  });
+
+  //если открыт фильтр и меняется ширина экрана, то закрываем его
+  window.addEventListener('resize', () => { //это событие происходит при изменении размеров экрана
+    if (vacanciesFilterBtn.classList.contains('vacancies__filter-btn_active')) { //если кнопка активна
+      closeFilter(
+        vacanciesFilterBtn,
+        vacanciesFilter,
+        'vacancies__filter-btn_active',
+        'vacancies__filter_active',
+      );
+    };
+  });
 
   //select city
   const citySelect = document.querySelector('#city');
@@ -217,6 +264,15 @@ const init = () => {
     }
   });
 
+  cardsList.addEventListener('keydown', ({code, target}) => {
+    const vacancyCard = target.closest('.vacancy');//определяем блок с классом vacancy
+    if ((code === 'Enter' || code === 'NumpadEnter') && vacancyCard) { //проверили, что нажат Enter на блок с классом vacancy
+      const vacancyId = vacancyCard.dataset.id; //получаем id
+      openModal(vacancyId);
+      target.blur();//снимаем фокус с элемента
+    }
+  })
+
   //filter
   filterForm.addEventListener('submit', (event) => {
     event.preventDefault(); //блокировка перезагрузки страницы
@@ -231,7 +287,13 @@ const init = () => {
 
     getData(urlWithParam, renderVacancies, renderError).then(() => {
       lastUrl = urlWithParam;
-      observer.observe()
+    }).then(() => {
+      closeFilter(
+        vacanciesFilterBtn,
+        vacanciesFilter,
+        'vacancies__filter-btn_active',
+        'vacancies__filter_active',
+      );
     });
   });
 };

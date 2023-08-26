@@ -13,6 +13,17 @@
   border-radius: 8px;
   background-color: #A6ADFF;
   font-size: 20px;
+  border: 2px solid transparent;
+  transition: background-color, color .3s ease-in-out;
+}
+
+.header__link:focus-visible {
+  border-color: #4f58be;
+}
+
+.header__link:hover {
+  background-color: #2a18ff;
+  color: #ffffff;
 }
 
 
@@ -28,7 +39,7 @@
   }
 
   .header__link {
-    padding: 10px 16px;
+    padding: 8px 23px;
     font-size: 14px;
   }
 }

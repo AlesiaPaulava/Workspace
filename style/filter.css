@@ -72,7 +72,21 @@
   padding: 8px 24px;
   border-radius: 4px;
   background-color: #a6adff;
+  border: 2px solid transparent;
+  transition-property:  background-color, color;
+  transition-duration: .2s;
+  transition-timing-function: ease-in-out ;
 }
+
+.filter__button:focus-visible {
+  border-color: #4f58be;
+}
+
+.filter__button:hover {
+  background-color: #2a18ff;
+  color: #ffffff;
+}
+
 
 @media (max-width: 940px) {
   .filter__title {
@@ -87,8 +101,7 @@
   .filter__checkboxes {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 24px;
-    justify-content: space-between;
+    gap: 24px 70px;
   }
 
   .filter__buttons {
